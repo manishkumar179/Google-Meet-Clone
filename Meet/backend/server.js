@@ -5,11 +5,25 @@ const http = require("http");
 const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
 const { Server } = require("socket.io");
+const cookieParser = require("cookie-parser")
+const connectDb = require("./config/connectDb")
+const authRouter = require("./routes/auth.route")
+const userRouter = require("./routes/user.route")
 
-const redis = require("./config/redis.js");
+const redis = require("./config/redis");
+
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin:"http://localhost:5173",
+    credentials:true
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(cookieParser())
+
 
 
 
@@ -58,8 +72,13 @@ io.on("connection", (socket) => {
   });
 });
 
+app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
+
+
 let PORT = process.env.PORT;
 
 httpServer.listen(PORT, () => {
   console.log(`Server is running on PORT ${PORT}`);
+  connectDb()
 });
