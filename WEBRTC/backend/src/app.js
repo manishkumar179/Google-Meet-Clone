@@ -1,53 +1,36 @@
 const express = require('express')
 const http = require("http")
 const {Server} = require("socket.io")
-const {v4:uuid} = require("uuid")
 const cors = require("cors")
 const cookieParser = require("cookie-parser")
+const roomHandler = require('./socket/roomHandler')
+const webRtcHandler = require('./socket/webRtcHandler')
 
 
 
 let app = express();
-const room = new Map();
 const httpServer = http.createServer(app);
 
+app.use(cors());
 const io = new Server(httpServer , {
     cors:{
         origin:"http://localhost:5173",
+        credentials:true
 
     }
 })
 
 io.on("connection",(socket)=>{
-    socket.on("create_room",()=>{
-        const roomId = uuid()
-        room.set(roomId,{
-            host:socket.id,
-            guest:[socket.id]
-        })
-        socket.join(roomId)
-        socket.emit("room_created",roomId)
-        console.log(rooms)
-    })
+    console.log("connection done: " , socket.id)
 
-    socket.on("join_room",(roomId)=>{
-        const room=rooms.get(roomId)
-        
-        if(!room){
-            return socket.emit("room_not_found")
-        }
-        room.guest.push(socket.id)
-        socket.join(roomId)
-        socket.emit("room_joined",roomId)
+    roomHandler({io, socket});
+    webRtcHandler({io, socket});
 
-        io.to(roomId).emit("user_joined",socket.id)
-    })
 })
 
 
 
 
 module.exports = {
-    app,
     httpServer
 }
